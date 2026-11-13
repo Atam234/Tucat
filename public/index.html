@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="tl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tucat — AI Vlog Editor</title>
+  <meta name="theme-color" content="#0a0a0b">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c8f31d'/%3E%3Cpath d='M12 9v14l11-7z' fill='%230a0a0b'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body data-view="home" data-tab="ai">
+
+  <!-- ============ HOME / UPLOAD ============ -->
+  <section id="home">
+    <div class="home-glow"></div>
+    <div class="brand big"><span class="logo">▶</span> Tucat</div>
+    <h1>Sabihin mo lang.<br><em>AI na ang mag-e-edit.</em></h1>
+    <p class="sub">I-upload ang vlog mo, tapos i-chat kung anong gusto mo — highlights, alis dead air, cinematic look, pang-TikTok. Ang agent ang gagawa ng cuts at effects.</p>
+    <label id="drop" class="drop">
+      <input id="file" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mp4,.mov,.m4v,.webm,.mkv" hidden>
+      <span class="drop-icon">＋</span>
+      <strong id="dropTitle">I-drop ang video dito o i-tap para pumili</strong>
+      <small id="dropHint">MP4, MOV, WebM, MKV</small>
+      <div class="bar" id="upBar" hidden><i></i></div>
+    </label>
+    <ul class="feats">
+      <li><b>✂ Auto-cut</b>Adaptive silence detection — tanggal ang dead air</li>
+      <li><b>⚡ Highlights</b>Loudness + onset + scene scoring</li>
+      <li><b>🎨 Looks</b>Cinematic, vintage, vivid at iba pa</li>
+      <li><b>📱 Any format</b>9:16, 1:1, 16:9 export</li>
+    </ul>
+  </section>
+
+  <!-- ============ EDITOR ============ -->
+  <div id="editor">
+    <header class="top">
+      <button class="brand" id="homeBtn" title="Bagong project"><span class="logo">▶</span><span class="brand-name">Tucat</span></button>
+      <span class="pname" id="pname"></span>
+      <div class="spacer"></div>
+      <button class="icon" id="undo" title="Undo (Ctrl+Z)" aria-label="Undo">↶</button>
+      <button class="icon" id="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">↷</button>
+      <select id="aspect" title="Aspect ratio" aria-label="Aspect ratio">
+        <option value="source">Orihinal</option><option value="9:16">9:16</option><option value="16:9">16:9</option><option value="1:1">1:1</option><option value="4:5">4:5</option>
+      </select>
+      <button class="cta" id="export">Export</button>
+    </header>
+
+    <aside class="panel fx" id="fx">
+      <h3>AI one-tap</h3>
+      <div class="cards" id="aiCards"></div>
+      <h3>Looks <small id="lookScope"></small></h3>
+      <div class="cards looks" id="lookCards"></div>
+      <h3>Transition</h3>
+      <div class="chips" id="transChips"></div>
+      <h3>Audio at fades</h3>
+      <div class="toggles">
+        <label><input type="checkbox" id="normalize"> Normalize loudness</label>
+        <label><input type="checkbox" id="mute"> Mute</label>
+        <label><input type="checkbox" id="fades"> Fade in / out</label>
+      </div>
+    </aside>
+
+    <section class="stage" id="stage">
+      <div class="frame" id="frame">
+        <video id="video" playsinline preload="auto"></video>
+        <div class="texts" id="texts"></div>
+        <div class="fade" id="fade"></div>
+      </div>
+      <div class="transport">
+        <button class="play" id="play" aria-label="Play">▶</button>
+        <span class="time" id="time">0:00.0 / 0:00.0</span>
+        <div class="spacer"></div>
+        <span class="pill" id="clipInfo"></span>
+      </div>
+    </section>
+
+    <aside class="panel chat" id="chat">
+      <div class="chat-head">
+        <span class="spark">✦</span><b>AI Editor</b>
+        <span class="pill" id="mode"></span>
+        <div class="spacer"></div>
+        <span class="quota" id="quota"></span>
+      </div>
+      <div class="msgs" id="msgs"></div>
+      <div class="suggest" id="suggest"></div>
+      <form id="form" class="composer">
+        <textarea id="input" rows="1" maxlength="1000" placeholder="Hal. “Gawing 30s highlights, cinematic, pang-TikTok”"></textarea>
+        <button class="send" id="send" aria-label="Ipadala">↑</button>
+      </form>
+    </aside>
+
+    <section class="timeline">
+      <div class="tl-tools">
+        <button id="split" title="Hatiin sa playhead (S)">✂ Split</button>
+        <button id="del" title="Burahin ang napiling clip (Del)">🗑 Delete</button>
+        <label class="mini">Bilis
+          <select id="speed"><option>0.5</option><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option><option>2</option><option>3</option></select>
+        </label>
+        <label class="mini">Zoom
+          <select id="zoom"><option selected>1</option><option>1.15</option><option>1.3</option><option>1.5</option><option>2</option></select>
+        </label>
+        <div class="spacer"></div>
+        <span class="muted" id="tlInfo"></span>
+        <input id="tlZoom" type="range" min="1" max="12" step="0.5" value="1" title="Timeline zoom" aria-label="Timeline zoom">
+      </div>
+      <div class="tl-scroll" id="tlScroll">
+        <div class="tl-inner" id="tlInner">
+          <div class="ruler" id="ruler"></div>
+          <div class="track text-track" id="textTrack"></div>
+          <div class="track clip-track" id="clipTrack"><canvas id="wave"></canvas></div>
+          <div class="playhead" id="playhead"></div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs">
+      <button data-tab="ai">✦ AI</button>
+      <button data-tab="fx">🎨 Effects</button>
+    </nav>
+  </div>
+
+  <div class="modal" id="modal" hidden>
+    <div class="sheet">
+      <h2 id="mTitle">Nire-render…</h2>
+      <div class="bar" id="mBar"><i></i></div>
+      <video id="mVideo" controls playsinline hidden></video>
+      <div class="row">
+        <select id="quality"><option value="720">720p (mabilis)</option><option value="1080">1080p</option></select>
+        <div class="spacer"></div>
+        <button id="mClose">Isara</button>
+        <a class="cta" id="mDownload" download hidden>⬇ I-download</a>
+        <button class="cta" id="mStart">Simulan ang export</button>
+      </div>
+    </div>
+  </div>
+  <div id="toast" role="status"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

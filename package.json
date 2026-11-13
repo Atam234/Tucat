@@ -1,0 +1,17 @@
+{
+  "name": "tucat",
+  "version": "0.1.0",
+  "description": "Agentic AI vlog editor — sabihin mo lang ang gusto mong edit, AI na ang gagawa.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20.12" },
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^2.0.2"
+  }
+}
