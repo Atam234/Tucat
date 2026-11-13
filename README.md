@@ -15,6 +15,24 @@ npm test
 
 Kapag walang `OPENROUTER_API_KEY`, tatakbo ito sa **demo mode**: simpleng keyword planner ang papalit sa LLM (libre, para sa testing). Gumagana pa rin ang lahat ng manual tools, presets, at export.
 
+## Mobile app (Android / iOS)
+
+Ang `mobile/` ay Capacitor project na nagpa-package ng parehong UI (`public/`) bilang native app. Ang app ay **client lang**: ang backend sa itaas (may hawak ng API key at ffmpeg) ay kailangang naka-deploy at naaabot ng phone.
+
+```bash
+cd mobile
+npm install
+TUCAT_API_URL=https://ang-backend-mo.example.com npm run android   # gagawa ng mobile/android at magsi-sync
+npm run open:android                                               # buksan sa Android Studio → Run
+# iOS (kailangan ng Mac + Xcode):  npm run ios && npm run open:ios
+```
+
+- **APK nang walang Android Studio:** ang GitHub Actions workflow na *Android APK* (`.github/workflows/android.yml`) ay nagbi-build ng debug APK at ina-upload ito bilang artifact na `tucat-debug-apk`. Itakda ang repo variable na `TUCAT_API_URL` (Settings → Secrets and variables → Actions → Variables) para naka-bake ang backend address.
+- Kapag walang `TUCAT_API_URL`, may **Tucat server** field sa unang screen ng app kung saan ilalagay ang address (hal. `http://192.168.1.5:3000` para sa testing sa parehong Wi-Fi; pinapayagan ang `http://` sa debug build lang).
+- Sa app, ang export ay dina-download sa device at binubuksan ang share sheet (Save, TikTok, Facebook, atbp.).
+- Ang web version ay installable din bilang PWA ("Add to Home Screen").
+- Ang native project folders (`mobile/android`, `mobile/ios`) ay ginagawa ng script at hindi naka-commit.
+
 ## Paano gumagana
 
 ```
@@ -57,4 +75,5 @@ Kailangan ng app ang ffmpeg at disk para sa uploads, kaya **container host** ang
 - Hindi "nakikita" o "naririnig" ng agent ang laman ng video — loudness, katahimikan, at scene changes lang ang batayan nito. Wala pang auto-captions (speech-to-text), music, o stickers.
 - Isang source video kada project. Walang user accounts; ang project link (may random ID) ang nagsisilbing access.
 - Ang preview ay approximation ng color looks at transitions; ang export ang eksaktong resulta.
+- Ang mobile app ay na-verify sa phone-sized na browser laban sa hiwalay na backend at sa pagbuo ng Android project; ang native share sheet at ang iOS build ay hindi pa nasusubukan sa totoong device.
 - Ang agent loop sa totoong LLM (OpenRouter) ay hindi pa nasusubukan nang live dito dahil walang API key sa build environment; demo mode at lahat ng tools/render ang na-verify.

@@ -164,3 +164,23 @@ input[type="checkbox"], input[type="range"] { accent-color: var(--accent); }
   .play { width: 34px; height: 34px; }
   #tlInfo { display: none; }
 }
+
+/* ---------- mobile app (Capacitor) at safe areas ---------- */
+.server { width: min(560px, 100%); margin-top: 14px; text-align: left; display: grid; gap: 6px; }
+.server[hidden] { display: none; }
+.server label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.server div { display: flex; gap: 8px; }
+.server input { flex: 1; min-width: 0; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; outline: 0; }
+.server input:focus { border-color: var(--accent); }
+.server small { color: var(--muted); min-height: 1.3em; }
+#home { padding-top: calc(32px + env(safe-area-inset-top)); padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+#editor { padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+body { -webkit-tap-highlight-color: transparent; }
+body.native { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+body.native .msg, body.native input, body.native textarea { user-select: text; -webkit-user-select: text; }
+@media (max-width: 900px) {
+  button, select { min-height: 36px; }
+  .tclip button { min-height: 0; }
+  .tabs button { min-height: 46px; }
+  textarea, input[type="url"] { font-size: 16px; } /* iwas auto-zoom ng iOS sa focus */
+}

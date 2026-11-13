@@ -2,10 +2,13 @@
 <html lang="tl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Tucat — AI Vlog Editor</title>
   <meta name="theme-color" content="#0a0a0b">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c8f31d'/%3E%3Cpath d='M12 9v14l11-7z' fill='%230a0a0b'/%3E%3C/svg%3E">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="app.css">
 </head>
 <body data-view="home" data-tab="ai">
@@ -23,6 +26,11 @@
       <small id="dropHint">MP4, MOV, WebM, MKV</small>
       <div class="bar" id="upBar" hidden><i></i></div>
     </label>
+    <form id="serverForm" class="server" hidden>
+      <label for="serverUrl">Tucat server</label>
+      <div><input id="serverUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://tucat.example.com"><button class="cta">I-save</button></div>
+      <small id="serverStatus"></small>
+    </form>
     <ul class="feats">
       <li><b>✂ Auto-cut</b>Adaptive silence detection — tanggal ang dead air</li>
       <li><b>⚡ Highlights</b>Loudness + onset + scene scoring</li>
@@ -134,6 +142,7 @@
     </div>
   </div>
   <div id="toast" role="status"></div>
+  <script src="config.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

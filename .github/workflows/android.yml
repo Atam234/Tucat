@@ -1,0 +1,42 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['mobile/**', 'public/**', '.github/workflows/android.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: Build web assets and Android project
+        env:
+          # Settings → Secrets and variables → Actions → Variables. Kapag blangko, ilalagay ng user ang server sa loob ng app.
+          TUCAT_API_URL: ${{ vars.TUCAT_API_URL }}
+          TUCAT_ALLOW_HTTP: '1' # debug build lang: para masubukan sa LAN (http://192.168.x.x:3000)
+        run: npm run android
+      - name: Assemble debug APK
+        working-directory: mobile/android
+        run: ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tucat-debug-apk
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk

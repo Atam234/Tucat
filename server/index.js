@@ -13,7 +13,19 @@ import { TOOL_DEFS, describeStep, runTool } from './tools.js';
 const app = express();
 if (config.trustProxy) app.set('trust proxy', 1);
 app.disable('x-powered-by');
+
+// Ang mobile app (Capacitor WebView) ay ibang origin kaysa sa backend, kaya kailangan ng CORS.
+// Walang cookies/credentials na ginagamit; ang allowlist ay ang mga origin ng native app + ALLOWED_ORIGINS.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && config.allowedOrigins.includes(origin)) {
+    res.set({ 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Max-Age': '600' });
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+  }
+  next();
+});
 app.use(express.json({ limit: '64kb' }));
+app.get('/api/health', (_req, res) => res.json({ ok: true, app: 'tucat', mode: agentMode() }));
 app.use(express.static(path.join(ROOT, 'public')));
 app.use('/media', express.static(dirs.uploads, { maxAge: '1d' }));
 app.use('/renders', express.static(dirs.renders));

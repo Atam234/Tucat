@@ -18,6 +18,9 @@ export const config = {
   trustProxy: process.env.TRUST_PROXY === '1',
   dataDir: process.env.DATA_DIR || path.join(ROOT, 'data'),
 
+  allowedOrigins: ['capacitor://localhost', 'ionic://localhost', 'https://localhost', 'http://localhost',
+    ...(process.env.ALLOWED_ORIGINS || '').split(',').map((x) => x.trim()).filter(Boolean)],
+
   openrouterKey: (process.env.OPENROUTER_API_KEY || '').trim(),
   model: process.env.LLM_MODEL || 'google/gemini-2.5-flash',
   fallbackModels: (process.env.LLM_FALLBACK_MODELS || '')

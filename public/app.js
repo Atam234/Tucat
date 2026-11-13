@@ -24,6 +24,13 @@ const AI_CARDS = [
 const SUGGEST = ['Alisin ang dead air', '30s highlights', 'Cinematic look', 'Pang-TikTok 9:16', 'Bilisan ng 1.5x', 'Lagyan ng title "My Vlog"'];
 const TRANS = [['none', 'Wala'], ['fade', 'Fade'], ['dissolve', 'Dissolve'], ['wipeleft', 'Wipe'], ['slideleft', 'Slide'], ['circleopen', 'Circle'], ['fadeblack', 'Dip to black']];
 
+// Sa web, iisa ang origin ng UI at backend (API = ''). Sa mobile app, hiwalay ang backend:
+// galing sa build-time config (window.TUCAT_API) o sa inilagay ng user sa "Server" field.
+const NATIVE = Boolean(window.Capacitor?.isNativePlatform?.());
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* private mode */ } } };
+let API = (window.TUCAT_API || store.get('tucatApi') || '').replace(/\/+$/, '');
+const abs = (p) => (/^https?:/.test(p) ? p : API + p);
+
 let P = null; // project view mula sa server
 let sel = null; // napiling clip id
 let t = 0; // timeline time ng playhead
@@ -37,7 +44,7 @@ const video = $('video');
 
 // ---------- API ----------
 async function api(path, body) {
-  const res = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const res = await fetch(abs(path), body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
   return data;
@@ -67,8 +74,8 @@ function setProject(data) {
   P = data;
   if (first) {
     document.body.dataset.view = 'editor';
-    location.hash = P.id;
-    video.src = P.source.url;
+    location.hash = P.id; store.set('tucatProject', P.id);
+    video.src = abs(P.source.url);
     t = 0; sel = null;
     $('pname').textContent = P.name;
   }
@@ -338,7 +345,7 @@ $('del').onclick = () => sel && op('delete_clips', { clip_ids: [sel] });
 $('speed').onchange = (e) => op('set_speed', { speed: Number(e.target.value), clip_ids: targetIds() });
 $('zoom').onchange = (e) => op('set_zoom', { zoom: Number(e.target.value), clip_ids: targetIds() });
 $('tlZoom').oninput = (e) => { tlZoom = Number(e.target.value); drawTimeline(); };
-$('homeBtn').onclick = () => { if (confirm('Magsimula ng bagong project? Naka-save ang kasalukuyan sa link na ito.')) { setPlaying(false); history.replaceState(null, '', location.pathname); location.reload(); } };
+$('homeBtn').onclick = () => { if (confirm('Magsimula ng bagong project?')) { setPlaying(false); store.set('tucatProject', null); history.replaceState(null, '', location.pathname); location.reload(); } };
 for (const b of document.querySelectorAll('.tabs button')) b.onclick = () => { document.body.dataset.tab = b.dataset.tab; };
 
 // timeline: click = seek + select, drag = scrub
@@ -387,7 +394,25 @@ function modalState(state, job) {
   $('mStart').hidden = state === 'running' || state === 'done';
   $('quality').hidden = state !== 'idle' && state !== 'error';
   $('mDownload').hidden = $('mVideo').hidden = state !== 'done';
-  if (state === 'done') { $('mVideo').src = job.url; $('mDownload').href = job.url; $('mDownload').download = `${P.name || 'tucat'}-edit.mp4`; }
+  if (state === 'done') {
+    const url = abs(job.url);
+    $('mVideo').src = url; $('mDownload').href = url; $('mDownload').download = `${P.name || 'tucat'}-edit.mp4`;
+    if (NATIVE) { $('mDownload').textContent = '↗ I-save / I-share'; $('mDownload').onclick = (ev) => { ev.preventDefault(); shareNative(url); }; }
+  }
+}
+// Sa native app: i-download ang MP4 sa cache ng device, tapos buksan ang share sheet (Save, TikTok, FB, atbp.)
+async function shareNative(url) {
+  const { Filesystem, Share } = window.Capacitor.Plugins || {};
+  try {
+    if (!Filesystem || !Share) throw new Error('walang plugin');
+    toast('Dina-download ang video…');
+    const r = await Filesystem.downloadFile({ url, path: `tucat-${Date.now()}.mp4`, directory: 'CACHE' });
+    const uri = r.path.startsWith('file://') ? r.path : `file://${r.path}`;
+    await Share.share({ title: P.name || 'Tucat', files: [uri] });
+  } catch (e) {
+    if (/cancel/i.test(e?.message || '')) return;
+    window.open(url, '_blank'); // fallback: buksan sa browser ng phone
+  }
 }
 $('export').onclick = () => { setPlaying(false); modalState('idle'); $('modal').hidden = false; };
 $('mClose').onclick = () => { $('modal').hidden = true; $('mVideo').pause(); };
@@ -408,13 +433,14 @@ $('mStart').onclick = async () => {
 // ---------- upload ----------
 function upload(file) {
   if (!file) return;
+  if (NATIVE && !API) return toast('Ilagay muna ang address ng Tucat server sa ibaba.', true);
   const bar = $('upBar');
   bar.hidden = false; $('dropTitle').textContent = `Ina-upload ang ${file.name}…`;
   const fd = new FormData(); fd.append('video', file);
   const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/projects');
+  xhr.open('POST', abs('/api/projects'));
   xhr.upload.onprogress = (e) => { if (e.lengthComputable) { bar.firstElementChild.style.width = `${(e.loaded / e.total) * 100}%`; if (e.loaded === e.total) $('dropTitle').textContent = 'Binabasa ang video…'; } };
-  const fail = (msg) => { bar.hidden = true; $('dropTitle').textContent = 'I-drop ang video dito o i-tap para pumili'; toast(msg, true); };
+  const fail = (msg) => { bar.hidden = true; $('dropTitle').textContent = NATIVE ? 'I-tap para pumili ng video' : 'I-drop ang video dito o i-tap para pumili'; toast(msg, true); };
   xhr.onload = () => {
     let data = {}; try { data = JSON.parse(xhr.responseText); } catch { /* hindi JSON */ }
     if (xhr.status === 200) setProject(data); else fail(data.error || 'Nabigo ang upload.');
@@ -428,7 +454,31 @@ drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('over'); };
 drop.ondragleave = () => drop.classList.remove('over');
 drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('over'); upload(e.dataTransfer.files[0]); };
 
-// balikan ang project mula sa link
-if (/^#[0-9a-f-]{36}$/.test(location.hash)) {
-  api(`/api/projects/${location.hash.slice(1)}`).then(setProject).catch(() => history.replaceState(null, '', location.pathname));
+// ---------- server setting (mobile app) ----------
+if (NATIVE) {
+  document.body.classList.add('native');
+  $('dropTitle').textContent = 'I-tap para pumili ng video';
+  const form = $('serverForm'), input = $('serverUrl'), status = $('serverStatus');
+  form.hidden = Boolean(window.TUCAT_API);
+  input.value = API;
+  const check = async () => {
+    if (!API) { status.textContent = 'Hindi pa naka-set ang server.'; return; }
+    status.textContent = 'Kinokontak ang server…';
+    try { const h = await api('/api/health'); status.textContent = h.app === 'tucat' ? `✓ Konektado${h.mode === 'demo' ? ' (demo mode ang server)' : ''}` : 'Hindi ito Tucat server.'; }
+    catch { status.textContent = '✕ Hindi makontak ang server. I-check ang address at internet.'; }
+  };
+  form.onsubmit = (ev) => {
+    ev.preventDefault();
+    let v = input.value.trim().replace(/\/+$/, '');
+    if (v && !/^https?:\/\//.test(v)) v = `https://${v}`;
+    API = v; input.value = v; store.set('tucatApi', v || null);
+    check();
+  };
+  check();
+}
+
+// balikan ang huling project (mula sa link sa web, o sa naka-save na id sa app)
+const lastId = /^#[0-9a-f-]{36}$/.test(location.hash) ? location.hash.slice(1) : store.get('tucatProject');
+if (lastId && /^[0-9a-f-]{36}$/.test(lastId) && (API || !NATIVE)) {
+  api(`/api/projects/${lastId}`).then(setProject).catch(() => { store.set('tucatProject', null); history.replaceState(null, '', location.pathname); });
 }

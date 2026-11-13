@@ -1,0 +1,23 @@
+{
+  "name": "tucat-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tucat mobile app (Android/iOS) — Capacitor shell ng ../public, kumokonekta sa Tucat backend.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "android": "npm run build && node scripts/platform.mjs android",
+    "ios": "npm run build && node scripts/platform.mjs ios",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/filesystem": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/share": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}
